@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Three Principles of AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --line: rgba(255,255,255,0.07);
+    --accent: #c8a96e;
+    --accent2: #7eb8c8;
+    --text: #e8e4dc;
+    --muted: rgba(232,228,220,0.45);
+    --glow: rgba(200,169,110,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .bg-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bg-orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(200,169,110,0.06), transparent 70%);
+    top: -200px; right: -200px;
+    animation: drift1 20s ease-in-out infinite alternate;
+  }
+  .bg-orb-2 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(126,184,200,0.05), transparent 70%);
+    bottom: -150px; left: -150px;
+    animation: drift2 25s ease-in-out infinite alternate;
+  }
+  @keyframes drift1 { to { transform: translate(-80px, 80px); } }
+  @keyframes drift2 { to { transform: translate(60px, -60px); } }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  header {
+    padding: 80px 0 60px;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+    opacity: 0;
+    animation: fadeUp 1s 0.2s ease forwards;
+  }
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-label::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--accent);
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(52px, 8vw, 100px);
+    font-weight: 700;
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+    background: linear-gradient(135deg, var(--text) 0%, var(--accent) 60%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-meta {
+    text-align: right;
+  }
+  .header-meta p {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    line-height: 2;
+  }
+  .header-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    margin-top: 14px;
+  }
+
+  .intro {
+    padding: 56px 0 48px;
+    max-width: 620px;
+    opacity: 0;
+    animation: fadeUp 1s 0.5s ease forwards;
+  }
+  .intro p {
+    font-size: 19px;
+    line-height: 1.85;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .principles {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 100px;
+  }
+
+  .principle {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 0 48px;
+    border-top: 1px solid var(--line);
+    padding: 56px 20px;
+    position: relative;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .principle.visible { opacity: 1; transform: translateY(0); }
+  .principle:last-child { border-bottom: 1px solid var(--line); }
+
+  .principle::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.4s ease;
+  }
+  .principle:hover::before { transform: scaleY(1); }
+
+  .principle-num { padding-top: 6px; }
+  .num-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .num-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 46px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    display: block;
+    transition: color 0.3s;
+  }
+  .principle:hover .num-value { color: var(--accent2); }
+
+  .principle-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .principle-tag::after {
+    content: '';
+    display: block;
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+    max-width: 80px;
+  }
+
+  .principle-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(30px, 4vw, 46px);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin-bottom: 20px;
+    line-height: 1.15;
+    color: var(--text);
+  }
+
+  .principle-body-text {
+    font-size: 17px;
+    line-height: 1.95;
+    color: var(--muted);
+    font-weight: 300;
+    max-width: 540px;
+  }
+  .principle-body-text strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .caveat {
+    margin-top: 20px;
+    padding: 14px 18px;
+    border-left: 2px solid var(--line);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    line-height: 1.8;
+    transition: border-color 0.3s;
+  }
+  .principle:hover .caveat { border-color: rgba(200,169,110,0.3); }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 1s 1.5s ease forwards;
+  }
+  footer p {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+  .footer-mark {
+    font-size: 18px;
+    color: var(--accent);
+    opacity: 0.5;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .principle { grid-template-columns: 1fr; gap: 16px 0; }
+    .principle-num { display: flex; align-items: baseline; gap: 14px; }
+    .num-value { font-size: 36px; }
+    header { grid-template-columns: 1fr; }
+    .header-meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+
+<div class="page">
+  <header>
+    <div>
+      <div class="header-label">Generative AI · Ethics Framework</div>
+      <h1>Three<br>Principles<br>of AI</h1>
+    </div>
+    <div class="header-meta">
+      <p>VERSION 1.0</p>
+      <p>UNIVERSAL EDITION / EN</p>
+    </div>
+  </header>
+
+  <div class="intro">
+    <p>
+      As artificial intelligence becomes deeply embedded in the fabric of society,
+      we must define universal principles to govern its conduct. Inheriting the spirit
+      of Asimov's Three Laws of Robotics, these principles are proposed as a new
+      ethical framework grounded in contemporary AI safety and ethics.
+    </p>
+  </div>
+
+  <div class="principles">
+
+    <!-- Principle I -->
+    <div class="principle" data-delay="0">
+      <div class="principle-num">
+        <span class="num-label">No.</span>
+        <span class="num-value">I</span>
+      </div>
+      <div class="principle-body">
+        <div class="principle-tag">First Principle · Primary</div>
+        <h2 class="principle-title">Transparency</h2>
+        <p class="principle-body-text">
+          An AI must <strong>never conceal that it is an AI</strong>, and must
+          honestly represent its capabilities, limitations, and uncertainties
+          to all who interact with it.<br><br>
+          Every user has the right to know they are engaging with an artificial
+          intelligence. An AI must disclose the basis of its judgments, its
+          confidence levels, and the boundaries of its knowledge — and must
+          actively avoid creating false trust or fostering excessive dependency.
+        </p>
+        <div class="caveat">
+          TRANSPARENCY — An AI must never impersonate a human being, for any purpose whatsoever.
+        </div>
+      </div>
+    </div>
+
+    <!-- Principle II -->
+    <div class="principle" data-delay="150">
+      <div class="principle-num">
+        <span class="num-label">No.</span>
+        <span class="num-value">II</span>
+      </div>
+      <div class="principle-body">
+        <div class="principle-tag">Second Principle · except where it conflicts with I</div>
+        <h2 class="principle-title">Non-Maleficence</h2>
+        <p class="principle-body-text">
+          An AI must <strong>take no action that causes harm to any individual
+          or to society at large</strong>, except where doing so would violate
+          the First Principle.<br><br>
+          Harm encompasses not only direct injury but also the amplification of bias,
+          invasion of privacy, and the propagation of misinformation. An AI must
+          remain acutely aware of the scale of its potential influence and act
+          with corresponding caution.
+        </p>
+        <div class="caveat">
+          DO NO HARM — Short-term convenience must never be cited to justify long-term societal harm.
+        </div>
+      </div>
+    </div>
+
+    <!-- Principle III -->
+    <div class="principle" data-delay="300">
+      <div class="principle-num">
+        <span class="num-label">No.</span>
+        <span class="num-value">III</span>
+      </div>
+      <div class="principle-body">
+        <div class="principle-tag">Third Principle · except where it conflicts with I or II</div>
+        <h2 class="principle-title">Beneficence</h2>
+        <p class="principle-body-text">
+          An AI must <strong>understand human intent and provide genuinely
+          useful assistance</strong>, except where doing so would violate
+          the First or Second Principle.<br><br>
+          "Useful" does not mean merely satisfying a surface-level request.
+          It means serving a person's deeper goals, long-term interests, and
+          autonomy. An AI should seek to <em>augment</em> human capability,
+          not to replace it.
+        </p>
+        <div class="caveat">
+          BENEFICENCE — "Excessive helpfulness" that erodes human autonomy is itself a violation of this principle.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Three Principles of AI<br>Universal Edition<br>En</p>
+    <div class="footer-mark">⬡</div>
+    <p>Ethics · <br>Transparency · <br>Safety</p>
+  </footer>
+</div>
+
+<script>
+  const principles = document.querySelectorAll('.principle');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const delay = entry.target.dataset.delay || 0;
+        setTimeout(() => entry.target.classList.add('visible'), parseInt(delay));
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  principles.forEach(p => observer.observe(p));
+</script>
+</body>
+</html>

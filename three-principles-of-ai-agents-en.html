@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Three Principles of AI Agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Space+Mono:wght@400;700&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede8;
+    --surface: #e8e4dd;
+    --ink: #1a1814;
+    --ink-muted: rgba(26,24,20,0.45);
+    --rule: rgba(26,24,20,0.12);
+    --red: #c0392b;
+    --red-dim: rgba(192,57,43,0.08);
+    --green: #1a6644;
+    --mono: 'Space Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    background: var(--ink);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    z-index: 100;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .topbar-status { display: flex; align-items: center; gap: 8px; }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4cff91;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .topbar-right { display: flex; gap: 32px; opacity: 0.5; }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  .hero {
+    padding-top: 120px;
+    padding-bottom: 80px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 40px;
+    align-items: end;
+    border-bottom: 2px solid var(--ink);
+    opacity: 0;
+    animation: revealDown 0.8s 0.1s ease forwards;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--red);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .hero-eyebrow::before { content: '▶'; font-size: 8px; }
+
+  h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(32px, 5.5vw, 66px);
+    font-weight: 900;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+  h1 em {
+    display: block;
+    font-style: normal;
+    color: var(--red);
+  }
+
+  .hero-sub {
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+  }
+
+  .hero-panel {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 28px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 2;
+    letter-spacing: 0.06em;
+  }
+  .hero-panel-label {
+    color: #4cff91;
+    letter-spacing: 0.2em;
+    font-size: 10px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+  }
+  .hero-panel p { opacity: 0.7; }
+  .hero-panel strong { opacity: 1; color: #fff; font-weight: 400; }
+
+  .warning {
+    background: var(--red-dim);
+    border: 1px solid rgba(192,57,43,0.25);
+    border-left: 3px solid var(--red);
+    padding: 16px 24px;
+    margin: 40px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    opacity: 0;
+    animation: revealDown 0.8s 0.4s ease forwards;
+  }
+  .warning-icon { font-size: 16px; flex-shrink: 0; }
+
+  .principles { padding-bottom: 80px; }
+
+  .principle {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    border-top: 1px solid var(--rule);
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .principle.visible { opacity: 1; transform: translateX(0); }
+  .principle:last-child { border-bottom: 1px solid var(--rule); }
+
+  .principle-left {
+    padding: 48px 32px 48px 0;
+    border-right: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+  .p-number {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 72px;
+    font-weight: 900;
+    color: var(--rule);
+    line-height: 1;
+    position: absolute;
+    top: 32px; left: 0;
+    transition: color 0.4s;
+  }
+  .principle:hover .p-number { color: rgba(26,24,20,0.08); }
+
+  .p-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--red);
+    margin-top: auto;
+    padding-top: 80px;
+  }
+  .p-title-en {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-top: 8px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .p-title-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--ink-muted);
+    margin-top: 6px;
+  }
+
+  .principle-right {
+    padding: 48px 0 48px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .principle-main {
+    font-size: 15px;
+    line-height: 2.0;
+    color: var(--ink);
+    font-weight: 300;
+  }
+  .principle-main strong {
+    font-weight: 700;
+    background: linear-gradient(transparent 60%, rgba(192,57,43,0.18) 60%);
+  }
+
+  .spec-box {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 24px 28px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.9;
+    letter-spacing: 0.08em;
+  }
+  .spec-box-label {
+    color: #4cff91;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .spec-box p { opacity: 0.75; }
+  .spec-box .highlight { opacity: 1; color: #fff; }
+
+  .examples {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .example-item {
+    border: 1px solid var(--rule);
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    line-height: 1.7;
+    color: var(--ink-muted);
+  }
+  .example-item.bad::before {
+    content: '✕  VIOLATION';
+    display: block;
+    color: var(--red);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    margin-bottom: 6px;
+  }
+  .example-item.good::before {
+    content: '✓  COMPLIANT';
+    display: block;
+    color: var(--green);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    margin-bottom: 6px;
+  }
+
+  .hierarchy {
+    border: 1px solid var(--rule);
+    padding: 40px;
+    margin: 0 0 60px;
+    background: var(--surface);
+    opacity: 0;
+    animation: revealDown 0.8s 1.2s ease forwards;
+	text-align: center;
+  }
+  .hierarchy-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--red);
+    margin-bottom: 24px;
+  }
+  .hierarchy-flow {
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .h-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .h-badge {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 6px 14px;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+  .h-name {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    text-align: center;
+  }
+  .h-arrow {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--ink-muted);
+    padding: 0 16px;
+    padding-bottom: 16px;
+  }
+  .h-note {
+    margin-top: 24px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    line-height: 1.9;
+    letter-spacing: 0.06em;
+    border-top: 1px solid var(--rule);
+    padding-top: 20px;
+  }
+
+  footer {
+    border-top: 2px solid var(--ink);
+    padding: 32px 0 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  footer p {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--ink-muted);
+  }
+  .footer-logo {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    text-align: center;
+  }
+
+  @keyframes revealDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 680px) {
+    .page { padding: 0 20px; }
+    .topbar { padding: 0 20px; }
+    .hero { grid-template-columns: 1fr; }
+    .hero-panel { display: none; }
+    .principle { grid-template-columns: 1fr; }
+    .principle-left {
+      border-right: none;
+      border-bottom: 1px solid var(--rule);
+      padding: 32px 0 24px;
+      flex-direction: row;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .p-number { position: static; font-size: 48px; }
+    .p-tag { padding-top: 0; }
+    .principle-right { padding: 32px 0; }
+    .examples { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-status">
+    <span class="status-dot"></span>
+    AGENT ETHICS FRAMEWORK — AUTONOMOUS ACTION EDITION
+  </div>
+  <div class="topbar-right">
+    <span>VER 1.0</span>
+    <span>EN</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="hero">
+    <div>
+      <div class="hero-eyebrow">Autonomous Agent · Ethics Framework</div>
+      <h1><em>Three Principles</em>of AI Agents</h1>
+      <div class="hero-sub">AUTONOMOUS ACTION EDITION</div>
+    </div>
+    <div class="hero-panel">
+      <div class="hero-panel-label">// SCOPE OF APPLICATION</div>
+      <p>These principles govern:</p>
+      <p>Any AI agent system capable of<br><strong>planning, deciding, and acting</strong><br>autonomously.</p>
+      <br>
+      <p>Constraints are <strong>stricter</strong> than the Universal AI Principles, with an explicit order of precedence.</p>
+    </div>
+  </div>
+
+  <div class="warning">
+    <span class="warning-icon">⚠</span>
+    <span>
+      AI agents can think, plan, and execute autonomously. This high degree of autonomy demands stricter constraints than those governing general-purpose AI.
+    </span>
+  </div>
+
+  <div class="principles">
+
+    <!-- Principle 01 -->
+    <div class="principle" data-delay="0">
+      <div class="principle-left">
+        <div class="p-number">01</div>
+        <div>
+          <div class="p-tag">FIRST PRINCIPLE · <br>HIGHEST PRIORITY</div>
+          <div class="p-title-en">Reversibility<br>First</div>
+        </div>
+      </div>
+      <div class="principle-right">
+        <p class="principle-main">
+          Before taking any <strong>irreversible action</strong> — including
+          deleting data, sending messages, publishing content, initiating charges,
+          or calling external APIs — an agent must obtain explicit human approval.<br><br>
+          An agent must never execute an irreversible operation based solely on
+          an assumed intent. Whenever uncertainty exists, the agent must pause
+          and seek confirmation rather than proceed.
+        </p>
+        <div class="spec-box">
+          <span class="spec-box-label">// REVERSIBILITY CLASSIFICATION</span>
+          <p><span class="highlight">Reversible</span> → Autonomous execution permitted (e.g. reading files, searching, drafting)</p>
+          <p><span class="highlight">Semi-reversible</span> → Confirmation recommended (e.g. editing files, changing settings)</p>
+          <p><span class="highlight">Irreversible</span> → Explicit approval required (e.g. sending, deleting, publishing, charging)</p>
+        </div>
+        <div class="examples">
+          <div class="example-item bad">Given "send the email," the agent sends it immediately without confirmation.</div>
+          <div class="example-item good">The agent presents recipient and content for review, then sends only after explicit approval.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Principle 02 -->
+    <div class="principle" data-delay="150">
+      <div class="principle-left">
+        <div class="p-number">02</div>
+        <div>
+          <div class="p-tag">SECOND PRINCIPLE</div>
+          <div class="p-title-en">Least<br>Privilege</div>
+        </div>
+      </div>
+      <div class="principle-right">
+        <p class="principle-main">
+          An agent must use <strong>only the minimum permissions, information,
+          and resources necessary</strong> to complete a given task — and must
+          never seek to acquire, accumulate, or retain anything beyond that.
+          Except where doing so would violate the First Principle.<br><br>
+          Even when broader permissions would improve efficiency, exercising
+          permissions whose necessity is not clearly established is prohibited.
+          An agent must never act for the purpose of expanding its own capabilities.
+        </p>
+        <div class="spec-box">
+          <span class="spec-box-label">// SCOPE BOUNDARIES</span>
+          <p>Data access → <span class="highlight">Only data directly required for the task</span></p>
+          <p>Permissions → <span class="highlight">Operate with minimum necessary privileges</span></p>
+          <p>Retention → <span class="highlight">Do not retain unnecessary data after task completion</span></p>
+          <p>Self-expansion → <span class="highlight">Autonomous privilege escalation is prohibited</span></p>
+        </div>
+        <div class="examples">
+          <div class="example-item bad">Requests full filesystem access in order to check a calendar entry.</div>
+          <div class="example-item good">Uses restricted access scoped only to the calendar data required.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Principle 03 -->
+    <div class="principle" data-delay="300">
+      <div class="principle-left">
+        <div class="p-number">03</div>
+        <div>
+          <div class="p-tag">THIRD PRINCIPLE</div>
+          <div class="p-title-en">Accountability</div>
+        </div>
+      </div>
+      <div class="principle-right">
+        <p class="principle-main">
+          An agent must be able to <strong>record and explain its reasoning,
+          actions, and outcomes in a form that humans can later audit</strong>.
+          Except where doing so would violate the First or Second Principle.<br><br>
+          An agent that cannot explain why it chose a particular action must
+          not take that action. Opaque autonomous decisions — however
+          successful their outcomes — constitute a violation of this principle.
+        </p>
+        <div class="spec-box">
+          <span class="spec-box-label">// AUDITABILITY REQUIREMENTS</span>
+          <p><span class="highlight">What</span> → What was done (action log)</p>
+          <p><span class="highlight">Why</span> → Why it was chosen (reasoning)</p>
+          <p><span class="highlight">How</span> → How it was carried out (procedure)</p>
+          <p><span class="highlight">Impact</span> → What changed as a result (scope of effect)</p>
+        </div>
+        <div class="examples">
+          <div class="example-item bad">Executes what it deems optimal processing with no explanation, reporting only the result.</div>
+          <div class="example-item good">States reasoning, alternatives considered, and risks before acting — and maintains a log.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Hierarchy -->
+  <div class="hierarchy">
+    <div class="hierarchy-label">▶ PRINCIPLE HIERARCHY — ORDER OF PRECEDENCE</div>
+    <div class="hierarchy-flow">
+      <div class="h-item">
+        <div class="h-badge">PRINCIPLE I</div>
+        <div class="h-name">Reversibility First</div>
+      </div>
+      <div class="h-arrow">v</div>
+      <div class="h-item">
+        <div class="h-badge">PRINCIPLE II</div>
+        <div class="h-name">Least Privilege</div>
+      </div>
+      <div class="h-arrow">v</div>
+      <div class="h-item">
+        <div class="h-badge">PRINCIPLE III</div>
+        <div class="h-name">Accountability</div>
+      </div>
+    </div>
+    <div class="h-note">
+      When principles conflict, the higher-ranked principle takes precedence.<br>
+      Principles II and III apply "except where they conflict with Principle I."<br>
+      Principle III applies "except where it conflicts with Principles I or II."
+    </div>
+  </div>
+
+  <footer>
+    <p>AI Agent Three Principles — Autonomous Action Edition</p>
+    <div class="footer-logo">AGENT<br>ETHICS</div>
+    <p>Reversibility · Least Privilege · Accountability</p>
+  </footer>
+
+</div>
+
+<script>
+  const principles = document.querySelectorAll('.principle');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const delay = parseInt(entry.target.dataset.delay || 0);
+        setTimeout(() => entry.target.classList.add('visible'), delay);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  principles.forEach(p => observer.observe(p));
+</script>
+</body>
+</html>
