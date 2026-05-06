@@ -7,13 +7,13 @@
 - A new set of AI principles that pays homage to Asimov's Three Laws of Robotics while adapting them to the current state of AI.
 
 ### ウェブページ / Webpage
-- 日本語
-- English
+- [日本語](https://columuni.github.io/three-principles-of-ai/three-principles-of-ai-ja.html)
+- [English](https://columuni.github.io/three-principles-of-ai/three-principles-of-ai-en.html)
 
 ## AIエージェント三原則 / Three Principles of AI Agents
 - AIエージェントは「考えて・計画して・実行する」ことができる。その自律性の高さゆえ、汎用AIより厳格な制約が必要となる。
 - AI agents can think, plan, and execute autonomously. This high degree of autonomy demands stricter constraints than those governing general-purpose AI.
 
 ### ウェブページ / Webpage
-- 日本語
-- English
+- [日本語](https://columuni.github.io/three-principles-of-ai/three-principles-of-ai-agents-ja.html)
+- [English](https://columuni.github.io/three-principles-of-ai/three-principles-of-ai-agents-en.html)
